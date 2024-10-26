@@ -1,0 +1,73 @@
+import random
+
+class LudoGame:
+    def __init__(self, players):
+        # Initialize positions for players with 4 pieces each. Start all pieces at position -1 (not yet in the game).
+        self.positions = {player: [-1]*4 for player in players}
+        self.players = players
+        self.home_path_length = 57  # including all positions and final home stretch
+
+    def roll_dice(self):
+        return random.randint(1, 6)
+
+    def can_move(self, player_id, piece_id, roll):
+        current_pos = self.positions[player_id][piece_id]
+        if current_pos == -1:  # Piece not yet in play
+            return roll == 6  # Can only enter with a roll of 6
+        new_pos = current_pos + roll
+        if new_pos > self.home_path_length:
+            return False  # Move would go past the home square
+        return True
+
+    def move_piece(self, player_id, piece_id, roll):
+        if self.positions[player_id][piece_id] == -1 and roll == 6:
+            self.positions[player_id][piece_id] = 1  # Enter the board
+        elif self.positions[player_id][piece_id] != -1:
+            self.positions[player_id][piece_id] += roll
+
+    def select_piece_to_move(self, player_id, roll):
+        valid_moves = [i for i in range(4) if self.can_move(player_id, i, roll)]
+        if not valid_moves:
+            print(f"No valid moves for Player {player_id} with roll {roll}.")
+            return None
+        while True:
+            piece_id = int(input(f"Player {player_id}, you rolled a {roll}. Choose piece to move {valid_moves}: "))
+            if piece_id in valid_moves:
+                return piece_id
+            else:
+                print("Invalid choice, please choose a valid piece.")
+
+    def play_turn(self, player_id):
+        roll = self.roll_dice()
+        piece_id = self.select_piece_to_move(player_id, roll)
+        if piece_id is not None:
+            self.move_piece(player_id, piece_id, roll)
+            print(f"Player {player_id} moves piece {piece_id} to position {self.positions[player_id][piece_id]}")
+        else:
+            print(f"Player {player_id} cannot make a valid move.")
+
+    def simulate_game(self):
+        while not self.is_game_over():
+            for player_id in self.players:
+                print(f"\nPlayer {player_id}'s turn:")
+                self.play_turn(player_id)
+
+    def is_game_over(self):
+        # Game over condition: one player gets all pieces home
+        for player_id, positions in self.positions.items():
+            if all(pos >= self.home_path_length for pos in positions):
+                print(f"\nPlayer {player_id} wins!")
+                return True
+        return False
+
+# Input player names
+num_players = 4
+players = []
+print(f"Please enter names for {num_players} players.")
+for i in range(num_players):
+    player_name = input(f"Enter Player {i + 1} name: ")
+    players.append(player_name)
+
+# Start the game simulation
+game = LudoGame(players)
+game.simulate_game()
